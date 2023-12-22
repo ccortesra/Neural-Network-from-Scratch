@@ -7,6 +7,12 @@ relu = lambda x: np.piecewise(x, [x<=0.0, x>0.0],[0, lambda x:x])
 tanh = lambda a: (np.exp(a))/(np.exp(-a)+np.exp(a))-(np.exp(-a))/(np.exp(-a)+np.exp(a))
 
 
+def mse(a,b):
+  return np.sum((a-b)**2)
+
+def d_mse(a,b):
+  return 2*(a-b)
+
 class Perceptron:
   def __init__(self, weights=False, entries= False, act_f = False):
     self.weights = weights
@@ -19,7 +25,7 @@ class Perceptron:
 class Layer:
   def __init__(self, units, prev_units, activation_function):
     self.weights = np.ones((units, prev_units))
-    self.biases = np.ones(units).reshape(-1,1)
+    self.biases = np.ones(units)
     self.act_func = activation_function
   
 
@@ -36,8 +42,9 @@ class Layer:
     # ...
     # (X_{n-1}0, X_{n-1}1, ... X_{n-1}{m-1})
     result_matrix = np.dot(self.weights, prev_output)
-    result_matrix = result_matrix + self.biases
-    result = self.act_func(result_matrix)
+    result = result_matrix + self.biases
+    if self.act_func:
+      result = self.act_func(result_matrix)
     
     return result
 
@@ -47,7 +54,7 @@ class NeuralNetwork:
     self.layers = []
     self.input_dim = input_dim
 
-  def add_layer(self, number_of_units, activaction_function):
+  def add_layer(self, number_of_units, activaction_function=False):
 
     try:
       # Numero de neuronas de la capa anterior(para construir la matriz)
@@ -60,17 +67,21 @@ class NeuralNetwork:
 
 
   
-  def compute(self, input):
-    input  = input.reshape(-1, 1)
+  def compute(self, x, y):
+    input  = x.reshape(-1, 1)
     for i in range(len(self.layers)):
-      input = self.layers[i].calculate(input)
+      input = self.layers[i].calculate(x)
+    output = input
+    error = mse(output,y)
+    print('MSE: ', error)
     return input
 
 
 def main():
-  nn = NeuralNetwork(2)
-  nn.add_layer(2,relu)
-  input = np.array([2,3])
-  print(nn.compute(input))
+  nn = NeuralNetwork(1)
+  nn.add_layer(1)
+  input = np.array([1.5])
+  y_target = np.array([0.8]) 
+  print(nn.compute(input, y_target))
 
 main()
