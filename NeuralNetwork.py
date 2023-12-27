@@ -4,6 +4,7 @@ import numpy as np
 sigmoid = lambda a: 1 / (1 + np.exp(-a))
 step = lambda x: np.piecewise(x, [x<=0.0, x>0.0],[0,1])
 relu = lambda x: np.piecewise(x, [x<=0.0, x>0.0],[0, lambda x:x])
+d_relu = lambda x: np.piecewise(x, [x<=0.0, x>0.0],[0, 1])
 tanh = lambda a: (np.exp(a))/(np.exp(-a)+np.exp(a))-(np.exp(-a))/(np.exp(-a)+np.exp(a))
 
 
@@ -27,7 +28,9 @@ class Layer:
     self.weights = np.ones((units, prev_units))
     self.biases = np.ones(units)
     self.act_func = activation_function
-  
+    self.z = None
+    self.prev_a = None
+
 
   def calculate(self, prev_output):
 
@@ -43,9 +46,10 @@ class Layer:
     # (X_{n-1}0, X_{n-1}1, ... X_{n-1}{m-1})
     result_matrix = np.dot(self.weights, prev_output)
     result = result_matrix + self.biases
+    self.z = result 
+    self.prev_a = prev_output
     if self.act_func:
       result = self.act_func(result_matrix)
-    
     return result
 
 
@@ -67,21 +71,62 @@ class NeuralNetwork:
 
 
   
-  def compute(self, x, y):
+  def epoch(self, x, y):
+    # Entrada X:
     input  = x.reshape(-1, 1)
+    # Vamos a pasar por cada capa haciendo los cálculos correspondientes
     for i in range(len(self.layers)):
       input = self.layers[i].calculate(x)
+    # Output son todos esos valores computados
     output = input
+    # Se cálcula el error con el Minimum Squareed Error en este caso(puede ser cualquier función)
     error = mse(output,y)
     print('MSE: ', error)
+    # Se retorna la salida
     return input
 
+
+
+  def backpropagation(self, predicted, y):
+    i = len(self.layers)-1
+    # d (C0) / d(a(L))
+    d_C_a = d_mse(y,predicted)
+
+    # Vamos de adelante hacia atrás
+    while i >= 0:
+      current_layer = self.layers[i]
+      
+      # z(L) son los resultados de los weights y biases al momento de hacer una epoch, por lo tanto podriamos necesitas
+      # estos datos
+      # d (a(L)) / d(z(L))
+      if current_layer.act_func:
+        d_a_z = d_relu(current_layer.z)
+      else: 
+        d_a_z = 1
+      # d (z(L)) / d(w(L))
+      d_z_w = current_layer.prev_a
+      
+      # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(w(L))
+      weight_nudge = d_C_a*d_a_z*d_z_w
+      # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(b(L)) (last term is 1)
+      bias_nudge = d_C_a*d_a_z
+
+
+      # Update the weights and biases
+      current_layer.weights -= weight_nudge 
+      current_layer.biases -= bias_nudge
+
+      i-=1
 
 def main():
   nn = NeuralNetwork(1)
   nn.add_layer(1)
   input = np.array([1.5])
   y_target = np.array([0.8]) 
-  print(nn.compute(input, y_target))
+  output = nn.epoch(input, y_target)
+  print('First output: ', output)
+  nn.backpropagation(output, y_target)
+  output = nn.epoch(input, y_target)
+  print('Second output: ', output)
 
 main()
