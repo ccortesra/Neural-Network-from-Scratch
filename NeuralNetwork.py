@@ -80,18 +80,18 @@ class NeuralNetwork:
     # Output son todos esos valores computados
     output = input
     # Se cálcula el error con el Minimum Squareed Error en este caso(puede ser cualquier función)
-    error = mse(output,y)
+    error = mse(output, y)
     print('MSE: ', error)
     # Se retorna la salida
     return input
 
 
 
-  def backpropagation(self, predicted, y):
+  def backpropagation(self, predicted, y, lr = 0.01):
     i = len(self.layers)-1
     # d (C0) / d(a(L))
-    d_C_a = d_mse(y,predicted)
-
+    d_C_a = d_mse(predicted,y)
+    print('d_C_a', d_C_a)
     # Vamos de adelante hacia atrás
     while i >= 0:
       current_layer = self.layers[i]
@@ -105,7 +105,7 @@ class NeuralNetwork:
         d_a_z = 1
       # d (z(L)) / d(w(L))
       d_z_w = current_layer.prev_a
-      
+      print('d_z_w', d_z_w)
       # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(w(L))
       weight_nudge = d_C_a*d_a_z*d_z_w
       # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(b(L)) (last term is 1)
@@ -113,8 +113,8 @@ class NeuralNetwork:
 
 
       # Update the weights and biases
-      current_layer.weights -= weight_nudge 
-      current_layer.biases -= bias_nudge
+      current_layer.weights -= weight_nudge*lr
+      current_layer.biases -= bias_nudge*lr
 
       i-=1
 
@@ -123,10 +123,11 @@ def main():
   nn.add_layer(1)
   input = np.array([1.5])
   y_target = np.array([0.8]) 
-  output = nn.epoch(input, y_target)
-  print('First output: ', output)
-  nn.backpropagation(output, y_target)
-  output = nn.epoch(input, y_target)
-  print('Second output: ', output)
+
+  for _ in range(100):
+    output = nn.epoch(input, y_target)
+    print('Output: ', output)
+    nn.backpropagation(output, y_target)
+  
 
 main()
