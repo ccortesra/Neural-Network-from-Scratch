@@ -12,7 +12,7 @@ def mse(a,b):
   return np.sum((a-b)**2)
 
 def d_mse(a,b):
-  return 2*(a-b)
+  return np.sum(2*(a-b))
 
 class Perceptron:
   def __init__(self, weights=False, entries= False, act_f = False):
@@ -85,44 +85,53 @@ class NeuralNetwork:
     # Se retorna la salida
     return input
 
+  def derivative_a_z(self, current_layer):
+    if current_layer.act_func:
+      d_a_z = d_relu(current_layer.z)
+    else: 
+      d_a_z = 1
 
+    d_a_z = np.tile(d_a_z, len(current_layer.prev_a))
+    return d_a_z
+  
+  def derivative_z_w(self, current_layer):
+    d_z_w = current_layer.prev_a
+    d_z_w = np.tile(d_z_w, (len(current_layer.z)))
+    return d_z_w
+  
 
   def backpropagation(self, predicted, y, lr = 0.01):
     i = len(self.layers)-1
-    # d (C0) / d(a(L))
+    
+    # Derivada del error con respecto a las salidas (a(l)):
+    # Simplemente metemos las salidas y los y esperados y los computamos
+    # d (C0) / d(a_i_(L))
     d_C_a = d_mse(predicted,y)
     print('d_C_a', d_C_a)
     # Vamos de adelante hacia atrás
+
     while i >= 0:
       current_layer = self.layers[i]
       
       # z(L) son los resultados de los weights y biases al momento de hacer una epoch, por lo tanto podriamos necesitas
       # estos datos
       # d (a(L)) / d(z(L))
-      if current_layer.act_func:
-        d_a_z = d_relu(current_layer.z)
-      else: 
-        d_a_z = 1
+
+      d_a_z = self.derivative_a_z(current_layer)
+      
       # d (z(L)) / d(w(L))
-      d_z_w = current_layer.prev_a
+      d_z_w = self.derivative_z_w(current_layer)
       print('d_z_w', d_z_w)
-      # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(w(L))
-      weight_nudge = d_C_a*d_a_z*d_z_w
-      # d (C0) / d(W) =  d (C0) / d(a(L)) * d (a(L)) / d(z(L)) * d (z(L)) / d(b(L)) (last term is 1)
-      bias_nudge = d_C_a*d_a_z
-
-
-      # Update the weights and biases
-      current_layer.weights -= weight_nudge*lr
-      current_layer.biases -= bias_nudge*lr
-
+      
+      delta_Z = d_C_a*d_a_z
+      delta_weight = delta_Z*d_z_w
       i-=1
 
 def main():
   nn = NeuralNetwork(1)
-  nn.add_layer(1)
-  input = np.array([1.5])
-  y_target = np.array([0.8]) 
+  nn.add_layer(2,relu)
+  input = np.array([1,2])
+  y_target = np.array([1,1]) 
 
   for _ in range(100):
     output = nn.epoch(input, y_target)
