@@ -25,8 +25,8 @@ class Perceptron:
 
 class Layer:
   def __init__(self, units, prev_units, activation_function):
-    self.weights = np.ones((units, prev_units))
-    self.biases = np.ones(units)
+    self.weights = np.array([[1,2],[3,4]], dtype='float64')
+    self.biases = np.array([1,1], dtype='float64')
     self.act_func = activation_function
     self.z = None
     self.prev_a = None
@@ -91,12 +91,13 @@ class NeuralNetwork:
     else: 
       d_a_z = 1
 
-    d_a_z = np.tile(d_a_z, len(current_layer.prev_a))
+    d_a_z = d_a_z.reshape(-1,1)
+    d_a_z = np.tile(d_a_z, (1,len(current_layer.prev_a)))
     return d_a_z
   
   def derivative_z_w(self, current_layer):
     d_z_w = current_layer.prev_a
-    d_z_w = np.tile(d_z_w, (len(current_layer.z)))
+    d_z_w = np.tile(d_z_w, (len(current_layer.z),1))
     return d_z_w
   
 
@@ -125,10 +126,15 @@ class NeuralNetwork:
       
       delta_Z = d_C_a*d_a_z
       delta_weight = delta_Z*d_z_w
+      bias_nudge = delta_weight.copy()[:,0] * lr
+      weight_nudge = delta_weight*lr
+      current_layer.weights -= weight_nudge
+      current_layer.biases -= bias_nudge
+
       i-=1
 
 def main():
-  nn = NeuralNetwork(1)
+  nn = NeuralNetwork(input_dim=2)
   nn.add_layer(2,relu)
   input = np.array([1,2])
   y_target = np.array([1,1]) 
