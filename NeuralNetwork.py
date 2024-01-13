@@ -49,7 +49,7 @@ class Layer:
     self.z = result 
     self.prev_a = prev_output
     if self.act_func:
-      result = self.act_func(result_matrix)
+      result = self.act_func(result)
     return result
 
 
