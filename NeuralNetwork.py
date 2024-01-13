@@ -12,7 +12,7 @@ def mse(a,b):
   return np.sum((a-b)**2)
 
 def d_mse(a,b):
-  return np.sum(2*(a-b))
+  return 2*(a-b)
 
 class Perceptron:
   def __init__(self, weights=False, entries= False, act_f = False):
@@ -107,7 +107,7 @@ class NeuralNetwork:
     # Derivada del error con respecto a las salidas (a(l)):
     # Simplemente metemos las salidas y los y esperados y los computamos
     # d (C0) / d(a_i_(L))
-    d_C_a = d_mse(predicted,y)
+    d_C_a = d_mse(predicted,y).reshape(-1,1)
     print('d_C_a', d_C_a)
     # Vamos de adelante hacia atrás
 
@@ -137,7 +137,7 @@ def main():
   nn = NeuralNetwork(input_dim=2)
   nn.add_layer(2,relu)
   input = np.array([1,2])
-  y_target = np.array([1,1]) 
+  y_target = np.array([1,100]) 
 
   for _ in range(100):
     output = nn.epoch(input, y_target)
