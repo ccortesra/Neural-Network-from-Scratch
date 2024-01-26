@@ -101,12 +101,13 @@ class NeuralNetwork:
     return d_a_z
   
   def derivative_z_w(self, current_layer):
-    d_z_w = current_layer.prev_a.reshape(-1,1)
-    d_z_w = np.tile(d_z_w, (len(current_layer.z),1))
+    d_z_w_row = np.ravel(current_layer.prev_a)
+    num_rows = len(current_layer.z)
+    d_z_w = np.tile(d_z_w_row, (num_rows, 1))
     return d_z_w
   
 
-  def backpropagation(self, predicted, y, lr = 0.01):
+  def backpropagation(self, predicted, y, lr = 0.001):
     i = len(self.layers)-1
     
     # Derivada del error con respecto a las salidas (a(l)):
@@ -137,7 +138,7 @@ class NeuralNetwork:
       # Delta del Costo / Delta del Peso
       delta_weight = delta_Z*d_z_w
       # Cambio de el bias y del peso
-      bias_nudge = delta_weight.copy()[:,0] * lr
+      bias_nudge = delta_Z.copy()[:,0] * lr
       weight_nudge = delta_weight*lr
 
       # Delta del costo / Delta de la entrada anterior (Peso) (SERVIRÁ PARA BACKPROP)
@@ -148,7 +149,7 @@ class NeuralNetwork:
       current_layer.old_biases = current_layer.biases
 
       current_layer.weights -= weight_nudge
-      current_layer.biases -= bias_nudge
+      current_layer.biases -= bias_nudge.reshape(-1,1)
 
       i-=1
 
@@ -156,10 +157,11 @@ def main():
   nn = NeuralNetwork(input_dim=2)
   nn.add_layer(2,relu)
   nn.add_layer(2,relu)
+  nn.add_layer(2, relu)
   input = np.array([1,2])
-  y_target = np.array([1,100]) 
+  y_target = np.array([1,100])
 
-  for _ in range(100):
+  for _ in range(10000):
     output = nn.epoch(input, y_target)
     print('Output: ', output)
     nn.backpropagation(output, y_target)
